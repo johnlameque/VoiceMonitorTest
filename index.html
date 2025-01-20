@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Recognition Word Counter</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #22c55e;
+            --error: #ef4444;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --background: #f9fafb;
+            --card: #ffffff;
+            --border: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .container {
+            background-color: var(--card);
+            width: 100%;
+            max-width: 500px;
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            padding: 2rem;
+            color: white;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.875rem;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 2rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background-color: var(--background);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .counter-wrapper {
+            text-align: center;
+            padding: 2rem;
+            background-color: var(--background);
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+        }
+
+        .counter {
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+            transition: all 0.3s ease;
+        }
+
+        .counter-label {
+            color: var(--text-light);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            background-color: var(--primary);
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background-color: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            background-color: var(--background);
+        }
+
+        .status.listening {
+            color: var(--success);
+            background-color: rgba(34, 197, 94, 0.1);
+        }
+
+        .status.error {
+            color: var(--error);
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: currentColor;
+        }
+
+        .listening .status-indicator {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0.95);
+                opacity: 0.5;
+            }
+        }
+
+        .permission-guide {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 12px;
+            background-color: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            display: none;
+        }
+
+        .permission-guide.visible {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .permission-guide h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .permission-guide ol {
+            margin-left: 1.5rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .permission-guide li {
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Microphone animation */
+        .mic-icon {
+            width: 24px;
+            height: 24px;
+            position: relative;
+        }
+
+        .mic-icon::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: currentColor;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .mic-icon::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .listening .mic-icon::after {
+            animation: ripple 1.5s infinite;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                border-radius: 16px;
+            }
+
+            .content {
+                padding: 1.5rem;
+            }
+
+            .counter {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Voice Word Counter</h1>
+            <div class="subtitle">Track word frequency in real-time</div>
+        </div>
+
+        <div class="content">
+            <div class="input-group">
+                <label for="targetWord">Target Word</label>
+                <div class="input-wrapper">
+                    <input type="text" id="targetWord" placeholder="Enter word to track...">
+                </div>
+            </div>
+
+            <div class="counter-wrapper">
+                <div class="counter" id="counter">0</div>
+                <div class="counter-label">occurrences detected</div>
+            </div>
+
+            <button id="startButton">
+                <span class="mic-icon"></span>
+                Start Listening
+            </button>
+
+            <div class="status" id="status">
+                <span class="status-indicator"></span>
+                Ready to start
+            </div>
+
+            <div id="permissionGuide" class="permission-guide">
+                <h3>🎤 Microphone Access Required</h3>
+                <p>To use voice recognition, we need microphone access:</p>
+                <ol>
+                    <li>Look for the microphone icon in your browser's address bar</li>
+                    <li>Click it and select "Allow"</li>
+                    <li>Refresh the page to start using voice recognition</li>
+                </ol>
+                <p>If you don't see the prompt, check your browser settings for microphone permissions.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const startButton = document.getElementById('startButton');
+            const targetWordInput = document.getElementById('targetWord');
+            const counterDisplay = document.getElementById('counter');
+            const statusDisplay = document.getElementById('status');
+            const permissionGuide = document.getElementById('permissionGuide');
+            
+            let recognition = null;
+            let isListening = false;
+            let wordCount = 0;
+
+            // Add number animation function
+            function animateCounter(from, to) {
+                const duration = 500;
+                const startTime = performance.now();
+                
+                function update(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    // Easing function for smooth animation
+                    const easeOut = t => 1 - Math.pow(1 - t, 3);
+                    const easedProgress = easeOut(progress);
+                    
+                    const current = Math.floor(from + (to - from) * easedProgress);
+                    counterDisplay.textContent = current;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    }
+                }
+                
+                requestAnimationFrame(update);
+            }
+
+            async function checkMicrophonePermission() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    return true;
+                } catch (err) {
+                    console.error('Microphone permission error:', err);
+                    return false;
+                }
+            }
+
+            async function initializeSpeechRecognition() {
+                if (!('webkitSpeechRecognition' in window)) {
+                    startButton.disabled = true;
+                    statusDisplay.textContent = 'Speech recognition is not supported in this browser';
+                    statusDisplay.className = 'status error';
+                    return;
+                }
+
+                const hasPermission = await checkMicrophonePermission();
+                if (!hasPermission) {
+                    permissionGuide.classList.add('visible');
+                    statusDisplay.innerHTML = '<span class="status-indicator"></span>Microphone access needed';
+                    statusDisplay.className = 'status error';
+                    return;
+                }
+
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+
+                recognition.onstart = () => {
+                    statusDisplay.innerHTML = '<span class="status-indicator"></span>Listening...';
+                    statusDisplay.className = 'status listening';
+                    startButton.innerHTML = '<span class="mic-icon"></span>Stop Listening';
+                    startButton.classList.add('listening');
+                    isListening = true;
+                    permissionGuide.classList.remove('visible');
+                };
+
+                recognition.onend = () => {
+                    if (isListening) {
+                        recognition.start();
+                    } else {
+                        statusDisplay.innerHTML = '<span class="status-indicator"></span>Stopped listening';
+                        statusDisplay.className = 'status';
+                        startButton.innerHTML = '<span class="mic-icon"></span>Start Listening';
+                        startButton.classList.remove('listening');
+                    }
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    if (event.error === 'not-allowed') {
+                        permissionGuide.classList.add('visible');
+                        statusDisplay.innerHTML = '<span class="status-indicator"></span>Microphone access denied';
+                    } else {
+                        statusDisplay.innerHTML = `<span class="status-indicator"></span>Error: ${event.error}`;
+                    }
+                    statusDisplay.className = 'status error';
+                    isListening = false;
+                    startButton.innerHTML = '<span class="mic-icon"></span>Start Listening';
+                    startButton.classList.remove('listening');
+                };
+
+                recognition.onresult = (event) => {
+                    const targetWord = targetWordInput.value.toLowerCase();
+                    
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) {
+                            const transcript = event.results[i][0].transcript.toLowerCase();
+                            const words = transcript.split(' ');
+                            
+                            const newInstances = words.filter(word => word === targetWord).length;
+                            if (newInstances > 0) {
+                                const oldCount = wordCount;
+                                wordCount += newInstances;
+                                animateCounter(oldCount, wordCount);
+                            }
+                        }
+                    }
+                };
+
+                startButton.addEventListener('click', () => {
+                    if (!targetWordInput.value.trim()) {
+                        targetWordInput.focus();
+                        return;
+                    }
+
+                   
+               if (!isListening) {
+                        recognition.start();
+                    } else {
+                        recognition.stop();
+                        isListening = false;
+                    }
+                });
+            }
+
+            // Initialize the app
+            initializeSpeechRecognition();
+        });
+    </script>
+</body>
+</html>
